@@ -1,7 +1,5 @@
 GO = go
-
 NAME = url-shortner
-
 INTERNAL_DIR = $(CURDIR)/internal
 CMD_DIR = $(CURDIR)/cmd
 BIN_DIR = $(CURDIR)/bin
