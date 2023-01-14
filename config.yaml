@@ -1,9 +1,0 @@
-logger:
-  level: info
-
-rest:
-  port: 8081
-
-database:
-  filename: "./dev/database.db"
-  capacity: 10
