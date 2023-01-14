@@ -94,6 +94,7 @@ For  both of the below scenarios, we assume that the application is running on `
 ### Create a new short URL
 
 URL: `POST http://localhost:8080/api/v1/shortener/`
+
 Request:
 ```json
 {
@@ -110,6 +111,7 @@ Response:
 ### Retrieve a full URL
 
 URL: `GET http://localhost:8080/api/v1/shortener/WTWBY9Rr5C/`
+
 Request:
 ```json
 // This is deliberately blank...
