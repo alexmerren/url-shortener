@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -16,36 +17,35 @@ const (
 )
 
 type RESTServer struct {
-	ctx        context.Context
 	httpServer *http.Server
 	logger     logger.Logger
-	datastore  datastore.Datastorer
+	datastore  datastore.UrlStorer
 }
 
-type RESTServerInput struct {
-	Logger    logger.Logger
-	Datastore datastore.Datastorer
-	Address   int
-}
-
-func NewRESTServer(input *RESTServerInput) (*RESTServer, error) {
+func NewRESTServer(
+	logger logger.Logger,
+	datastore datastore.UrlStorer,
+	host string,
+	port int,
+	handler http.Handler,
+) *RESTServer {
 	server := &RESTServer{
 		httpServer: &http.Server{
-			Addr:         fmt.Sprintf(":%d", input.Address),
+			Addr:         fmt.Sprintf("%s:%d", host, port),
 			ReadTimeout:  readTimeout * time.Second,
 			WriteTimeout: writeTimeout * time.Second,
+			Handler:      handler,
 		},
-		logger:    input.Logger,
-		datastore: input.Datastore,
+		logger:    logger,
+		datastore: datastore,
 	}
-	server.addRoutes()
-	return server, nil
+	return server
 }
 
 func (s *RESTServer) Start() error {
 	s.logger.With("address", s.httpServer.Addr).Info("Starting HTTP server")
-	if err := s.httpServer.ListenAndServe(); err != nil {
-		s.logger.Fatal(err)
+	if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		s.logger.Error(err)
 		return err
 	}
 	return nil

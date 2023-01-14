@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  rest-server:
+    container_name: rest-server
+    build:
+      context: .
+      target: rest-server-image
+    restart: always
+    command: /usr/local/dist/url-shortener
+    depends_on:
+      database:
+        condition: service_healthy
+    ports: 
+      - "8080:8080"
+    environment:
+      URL_LOGGER_ENCODING: json
+      URL_LOGGER_LEVEL: info
+      URL_REST_HOST: 0.0.0.0
+      URL_REST_PORT: 8080
+      URL_DATABASE_HOST: database 
+      URL_DATABASE_PORT: 5432
+      URL_DATABASE_USER: postgres
+      URL_DATABASE_PASSWORD: postgres
+      URL_DATABASE_NAME: urlshortener 
+      URL_DATABASE_CAPACITY: 10
+    networks:
+      - url-shortener-network
+
+  database:
+    container_name: database
+    image: postgres:15.1
+    restart: always
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports: 
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: database
+    networks:
+      - url-shortener-network
+
+networks:
+  url-shortener-network:
+    driver: bridge
