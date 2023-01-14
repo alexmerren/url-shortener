@@ -16,13 +16,13 @@ services:
     environment:
       URL_LOGGER_ENCODING: json
       URL_LOGGER_LEVEL: info
-      URL_REST_HOST: localhost
+      URL_REST_HOST: 0.0.0.0
       URL_REST_PORT: 8080
       URL_DATABASE_HOST: database 
       URL_DATABASE_PORT: 5432
       URL_DATABASE_USER: postgres
-      URL_DATABASE_PASSWORD: postgres-secret
-      URL_DATABASE_NAME: testdb
+      URL_DATABASE_PASSWORD: postgres
+      URL_DATABASE_NAME: urlshortener 
       URL_DATABASE_CAPACITY: 10
     networks:
       - url-shortener-network
@@ -42,7 +42,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres-secret
+      POSTGRES_PASSWORD: postgres
       POSTGRES_HOST: database
     networks:
       - url-shortener-network

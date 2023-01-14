@@ -14,8 +14,8 @@ import (
 
 const (
 	expiryTime                         = 7 * 24 * time.Hour
-	selectExpiryTimeAndUrlWithKeyQuery = "SELECT expiry_time,url FROM \"urls\" WHERE \"key\" = ? LIMIT 1"
-	insertAllIntoUrlsQuery             = "INSERT INTO \"urls\" (id, key, url, expiry_time) VALUES (?, ?, ?, ?)"
+	selectExpiryTimeAndUrlWithKeyQuery = "SELECT expiry_time,url FROM urls WHERE key = $1 LIMIT 1"
+	insertAllIntoUrlsQuery             = "INSERT INTO urls (id, key, url, expiry_time) VALUES ($1, $2, $3, $4)"
 )
 
 type PostgresUrlStore struct {
