@@ -88,3 +88,36 @@ docker-compose restart rest-server
 ## Usage
 
 It is what it says on the tin -- it's a basic URL shortener. Links have an expiry time added to them by default, but this can be altered easily [here](./internal/datastore/postgres.go). I may add some more customisability in the future.
+
+For  both of the below scenarios, we assume that the application is running on `localhost:8080`.
+
+### Create a new short URL
+
+URL: `POST http://localhost:8080/api/v1/shortener/`
+Request:
+```json
+{
+    "url":"https://github.com/alexmerren"
+}
+```
+Response:
+```json
+{
+    "id": "WTWBY9Rr5C"
+}
+```
+
+### Retrieve a full URL
+
+URL: `GET http://localhost:8080/api/v1/shortener/WTWBY9Rr5C/`
+Request:
+```json
+// This is deliberately blank...
+```
+
+Response:
+```json
+{
+    "url": "https://github.com/alexmerren"
+}
+```
