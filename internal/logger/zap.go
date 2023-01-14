@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"errors"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -9,7 +11,15 @@ type ZapLogger struct {
 	logger *zap.SugaredLogger
 }
 
-func NewZapLogger(logLevel string) (*ZapLogger, error) {
+func NewZapLogger(encoding, logLevel string) (*ZapLogger, error) {
+	if encoding == "" {
+		return nil, errors.New("encoding not found")
+	}
+
+	if logLevel == "" {
+		return nil, errors.New("log level not found")
+	}
+
 	var level zapcore.Level
 	if err := level.UnmarshalText([]byte(logLevel)); err != nil {
 		return nil, err
@@ -17,7 +27,7 @@ func NewZapLogger(logLevel string) (*ZapLogger, error) {
 
 	zapConfig := zap.Config{
 		Level:            zap.NewAtomicLevelAt(level),
-		Encoding:         "json",
+		Encoding:         encoding,
 		OutputPaths:      []string{"stdout"},
 		ErrorOutputPaths: []string{"stderr"},
 		EncoderConfig: zapcore.EncoderConfig{
@@ -62,6 +72,12 @@ func (z *ZapLogger) Fatal(msg interface{}) {
 func (z *ZapLogger) With(key string, value interface{}) Logger {
 	return &ZapLogger{
 		z.logger.With(key, value),
+	}
+}
+
+func (z *ZapLogger) WithError(err error) Logger {
+	return &ZapLogger{
+		z.logger.With("err", err),
 	}
 }
 

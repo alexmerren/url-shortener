@@ -1,16 +1,14 @@
 GO := go
 POSTGRES := psql
-DOCKER := docker
-
-EXEC_NAME := url-shortner
+DOCKERCOMPOSE := docker-compose
 
 INTERNAL_DIR := $(CURDIR)/internal
 CMD_DIR := $(CURDIR)/cmd
-BIN_DIR := $(CURDIR)/bin
+DIST_DIR := $(CURDIR)/dist
 BUILD_DIR := $(CURDIR)/build
 
 DB_USER := postgres
-DB_HOST := pgdb
+DB_HOST := localhost
 DB_PORT := 5432
 DB_INIT := $(BUILD_DIR)/db-init.sql
 DB_WIPE := $(BUILD_DIR)/db-wipe.sql
@@ -19,11 +17,11 @@ DB_WIPE := $(BUILD_DIR)/db-wipe.sql
 
 .PHONY: build
 build:
-	$(GO) build -o $(BIN_DIR)/... -mod=vendor $(CMD_DIR)/$(EXEC_NAME) 
+	$(GO) build -o $(DIST_DIR)/ -mod=vendor $(CMD_DIR)/...
 
 .PHONY: run
 run:
-	$(GO) run $(CMD_DIR)/$(EXEC_NAME)
+	$(GO) run $(CMD_DIR)/url-shortener
 
 .PHONY: vendor
 vendor:
@@ -40,12 +38,16 @@ db-init:
 db-wipe:
 	$(POSTGRES) -h $(DB_HOST) -p $(DB_PORT)  -U $(DB_USER) -f $(DB_WIPE)
 
+.PHONY: db-exec
+db-exec:
+	$(POSTGRES) -h $(DB_HOST) -p $(DB_PORT)  -U $(DB_USER)
+
 # Docker Commands
 
 .PHONY: docker-build
 docker-build:
-	echo "Not implemented yet..."
+	$(DOCKERCOMPOSE) build --no-cache
 
 .PHONY: docker-run
 docker-run:
-	echo "Not implemented yet..."
+	$(DOCKERCOMPOSE) up -d
