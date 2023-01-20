@@ -12,20 +12,7 @@ import (
 	"url-shortner/internal/rest"
 )
 
-const (
-	ErrAppBuild     = 1
-	ErrServerStop   = 2
-	ErrLoggerSync   = 3
-	ErrDatabaseStop = 4
-)
-
-type Application struct {
-	server   *rest.RESTServer
-	database datastore.UrlStorer
-	logger   logger.Logger
-}
-
-func NewApplication() *Application {
+func RunApplication() error {
 	filesystem := config.NewFilesystem()
 	config := config.NewConfiguration("config.yaml", filesystem)
 
@@ -34,7 +21,6 @@ func NewApplication() *Application {
 	logger, err := logger.NewZapLogger(logEncoding, logLevel)
 	if err != nil {
 		log.Print(err)
-		return nil
 	}
 
 	ctx := context.Background()
@@ -48,9 +34,10 @@ func NewApplication() *Application {
 		logger.WithError(err).Error("could not get database config")
 	}
 
-	database := datastore.NewPostgresUrlStore(
+	database, closeFunc := datastore.NewPostgresUrlStore(
 		ctx, logger, dbUser, dbPassword, dbHost, dbName, dbPort, dbCapacity,
 	)
+	defer closeFunc(ctx)
 
 	restHost, err := config.GetString("rest.host")
 	restPort, err := config.GetInt("rest.port")
@@ -65,43 +52,25 @@ func NewApplication() *Application {
 		logger, database, restHost, restPort, router,
 	)
 
-	return &Application{
-		server:   restServer,
-		logger:   logger,
-		database: database,
-	}
-}
-
-func (a *Application) Run() int {
 	terminationChannel := make(chan os.Signal, 1)
 	signal.Notify(terminationChannel, syscall.SIGINT, syscall.SIGTERM)
 
-	go a.server.Start()
-	go a.database.Start()
+	go restServer.Start()
 
 	<-terminationChannel
 
-	if err := a.server.Stop(); err != nil {
-		return ErrServerStop
+	if err := restServer.Stop(); err != nil {
+		return err
 	}
 
-	if err := a.logger.Sync(); err != nil {
-		return ErrLoggerSync
+	if err := logger.Sync(); err != nil {
+		return err
 	}
-
-	if err := a.database.Stop(); err != nil {
-		return ErrDatabaseStop
-	}
-
-	return 0
+	return nil
 }
 
 func main() {
-	app := NewApplication()
-	if app == nil {
-		os.Exit(ErrAppBuild)
-	}
-	if code := app.Run(); code != 0 {
-		os.Exit(code)
+	if err := RunApplication(); err != nil {
+		os.Exit(1)
 	}
 }

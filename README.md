@@ -4,6 +4,7 @@ An easily configurable, locally host-able URL shortener written in Golang. A (sm
 
 ## Table of Contents
  - [Requirements](#requirements)
+ - [Quick Start](#quick-start)
  - [Configuration](#configuration)
  - [Deployment](#deployment)
  - [Database Management](#database)
@@ -16,6 +17,17 @@ To run and deploy this application, you will need a few things:
  - [Go 1.18+](https://go.dev/doc/install)
  - [Docker](https://docs.docker.com/get-docker/)
  - [Docker-compose](https://docs.docker.com/compose/install/)
+
+## Quick Start
+
+To start the service (quickly), run the following:
+```bash
+make vendor
+make docker-build
+make docker-run
+make db-create
+make db-init
+```
 
 ## Configuration
 
