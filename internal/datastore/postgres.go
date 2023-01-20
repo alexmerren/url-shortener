@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+type CloseFunc func(context.Context) error
+
 const (
 	expiryTime                         = 7 * 24 * time.Hour
 	selectExpiryTimeAndUrlWithKeyQuery = "SELECT expiry_time,url FROM urls WHERE key = $1 LIMIT 1"
@@ -20,7 +22,6 @@ const (
 
 type PostgresUrlStore struct {
 	ctx      context.Context
-	connUrl  string
 	conn     *pgx.Conn
 	logger   logger.Logger
 	capacity int
@@ -31,12 +32,12 @@ func NewPostgresUrlStore(
 	logger logger.Logger,
 	user, password, host, name string,
 	port, capacity int,
-) *PostgresUrlStore {
+) (*PostgresUrlStore, CloseFunc) {
 	if logger == nil {
-		return nil
+		return nil, dummyCloseFunction
 	}
 	if user == "" || password == "" || host == "" || name == "" || port == 0 {
-		return nil
+		return nil, dummyCloseFunction
 	}
 
 	connectionUrl := fmt.Sprintf(
@@ -44,31 +45,19 @@ func NewPostgresUrlStore(
 		user, password, host, port, name,
 	)
 
+	logger.With("address", connectionUrl).Info("Starting Postgres connection")
+	conn, err := pgx.Connect(ctx, connectionUrl)
+	if err != nil {
+		logger.WithError(err).Error("could not connect to database")
+		return nil, dummyCloseFunction
+	}
+
 	return &PostgresUrlStore{
 		ctx:      ctx,
-		connUrl:  connectionUrl,
+		conn:     conn,
 		logger:   logger,
 		capacity: capacity,
-	}
-}
-
-func (p *PostgresUrlStore) Start() error {
-	p.logger.With("address", p.connUrl).Info("Starting Postgres connection")
-	conn, err := pgx.Connect(p.ctx, p.connUrl)
-	if err != nil {
-		p.logger.WithError(err).Error("could not connect to database")
-		return err
-	}
-	p.conn = conn
-	return nil
-}
-
-func (p *PostgresUrlStore) Stop() error {
-	if err := p.conn.Close(p.ctx); err != nil {
-		p.logger.WithError(err).Error("could not close connection to database")
-		return err
-	}
-	return nil
+	}, conn.Close
 }
 
 func (s *PostgresUrlStore) GetUrl(key string) (string, error) {
@@ -119,4 +108,8 @@ func (s *PostgresUrlStore) InsertUrlWithContext(ctx context.Context, url string)
 	}
 
 	return key, nil
+}
+
+func dummyCloseFunction(ctx context.Context) error {
+	return nil
 }
